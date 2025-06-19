@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>{{ 'Edit' if feature else 'Add' }} Feature</h2>
+
+<form method="POST">
+  <div class="mb-3">
+    <label class="form-label">Title</label>
+    <input name="title" class="form-control" value="{{ feature.title if feature else '' }}" required />
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Description</label>
+    <textarea name="description" class="form-control" required>{{ feature.description if feature else '' }}</textarea>
+  </div>
+
+  <button type="submit" class="btn btn-success">{{ 'Save Changes' if feature else 'Save Feature' }}</button>
+  <a href="/project/{{ project_id }}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}

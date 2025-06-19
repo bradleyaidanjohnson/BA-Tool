@@ -1,0 +1,12 @@
+{% extends 'base.html' %} {% block content %}
+
+<a href="/project/new" class="btn btn-primary mb-3">+ New Project</a>
+
+<ul class="list-group">
+  {% for project in projects %}
+  <li class="list-group-item">
+    <a href="/project/{{project.id}}">{{project.name}}</a>
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}
