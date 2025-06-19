@@ -65,19 +65,64 @@ def delete_project(project_id):
 @app.route('/project/<int:project_id>')
 def view_project(project_id):
     project = Project.query.get_or_404(project_id)
+    personnel = Personnel.query.order_by(Personnel.name).all()
     show_added = request.args.get('show_added', '1') == '1'
-    return render_template('project_details.html', project=project, show_added=show_added)
+    assigned_to_id = request.args.get('assigned_to', type=int)
+
+    def gather_stories(feature):
+        stories = feature.user_stories
+        if assigned_to_id:
+            stories = [s for s in stories if s.assigned_to_id == assigned_to_id]
+        for sub in feature.subfeatures:
+            stories.extend(gather_stories(sub))
+        return stories
+
+    # Gather all features that belong to this project (root features)
+    root_features = [f for f in project.features if not f.parent_feature_id]
+
+    # Gather filtered stories from all root features recursively
+    filtered_stories = []
+    for feature in root_features:
+        filtered_stories.extend(gather_stories(feature))
+
+    filtered_story_ids = [s.id for s in filtered_stories]
+
+    return render_template(
+        'project_details.html',
+        project=project,
+        show_added=show_added,
+        personnel=personnel,
+        assigned_to_id=assigned_to_id,
+        filtered_story_ids=filtered_story_ids
+    )
+
+
 
 @app.route('/feature/<int:feature_id>')
 def view_feature(feature_id):
     feature = Feature.query.get_or_404(feature_id)
+    personnel = Personnel.query.order_by(Personnel.name).all()
+
+    assigned_to_id = request.args.get('assigned_to', type=int)
+
+    # Gather stories, filtered by assigned_to_id if provided
+    def gather_stories(feature):
+        stories = feature.user_stories
+        if assigned_to_id:
+            stories = [s for s in stories if s.assigned_to_id == assigned_to_id]
+        # recursively include subfeatures
+        for sub in feature.subfeatures:
+            stories.extend(gather_stories(sub))
+        return stories
+
+    filtered_story_ids = [s.id for s in gather_stories(feature)]
     show_added = request.args.get("show_added", "1") == "1"
     breadcrumbs = build_feature_breadcrumbs(feature)
     return render_template(
         "feature_details.html",
         feature=feature,
         show_added=show_added,
-        breadcrumbs=breadcrumbs, root_feature=feature
+        breadcrumbs=breadcrumbs, root_feature=feature, filtered_story_ids=filtered_story_ids, personnel=personnel, assigned_to_id=assigned_to_id
     )
 
 @app.route('/project/<int:project_id>/feature/new', methods=['GET', 'POST'])
@@ -111,7 +156,7 @@ def new_story(feature_id):
     personnel = Personnel.query.order_by(Personnel.name).all()
 
     if request.method == 'POST':
-        print('reached')
+        print('reached-post')
         title = request.form['title']
         details = request.form['details']
         created_by_id = request.form.get("created_by_id")

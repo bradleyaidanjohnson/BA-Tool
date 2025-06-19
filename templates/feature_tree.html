@@ -26,10 +26,9 @@
       >+ Subfeature</a
     >
   </div>
-  {% if feature.user_stories %}
+{% if feature.user_stories %}
   <ul class="mt-1">
-    {% for story in feature.user_stories %} {% if show_added or not
-    story.ado_added %}
+    {% for story in feature.user_stories if story.id in filtered_story_ids and (show_added or not story.ado_added) %}
     <li>
       <form
         onsubmit="toggleAdo({{ story.id }}); return false;"
@@ -43,44 +42,45 @@
         </button>
       </form>
       <strong>
-  <a href="{{ url_for('edit_story', story_id=story.id) }}">{{ story.title }}</a>
-</strong> - {{ story.created_by or "Unknown" }} | Assigned to: {{ story.assigned_to.name if story.assigned_to else 'Unassigned' }}<br />
-
+        <a href="{{ url_for('edit_story', story_id=story.id) }}">{{ story.title }}</a>
+      </strong> - {{ story.created_by or "Unknown" }} |
+      Assigned to: {{ story.assigned_to.name if story.assigned_to else 'Unassigned' }}<br />
       <em>{{ story.details }}</em>
+
       {% if story.attachments %}
       <ul>
         {% for file in story.attachments %}
         <li>
           📎
-          <a
-            href="{{ url_for('static', filename='uploads/' ~ file.filename) }}"
-            target="_blank"
-            >{{ file.filename }}</a
-          >
+          <a href="{{ url_for('static', filename='uploads/' ~ file.filename) }}" target="_blank">
+            {{ file.filename }}
+          </a>
         </li>
         {% endfor %}
       </ul>
       {% endif %}
-      
+
       <form
         action="{{ url_for('delete_story', story_id=story.id) }}"
         method="post"
         style="display: inline"
       >
-        <button
-          class="btn btn-sm btn-outline-danger"
-          onclick="return confirm('Are you sure?')"
-        >
+        <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure?')">
           Delete
         </button>
       </form>
     </li>
-    {% endif %} {% endfor %}
+    {% endfor %}
   </ul>
-  {% endif %} {% if feature.subfeatures %}
+{% endif %}
+
+{% if feature.subfeatures %}
   <ul>
-    {% for sub in feature.subfeatures %} {% set feature = sub %} {% include
-    'feature_tree.html' %} {% endfor %}
+    {% for sub in feature.subfeatures %}
+      {% set feature = sub %}
+      {% include 'feature_tree.html' %}
+    {% endfor %}
   </ul>
-  {% endif %}
+{% endif %}
+
 </li>

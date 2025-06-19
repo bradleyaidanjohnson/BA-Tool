@@ -17,6 +17,20 @@
   </ol>
 </nav>
 
+<form method="get" class="mb-3">
+  <input type="hidden" name="show_added" value="{{ 1 if show_added else 0 }}">
+  <label for="assigned_to_filter">Filter by Assigned User:</label>
+  <select name="assigned_to" id="assigned_to_filter" onchange="this.form.submit()">
+    <option value="">-- All --</option>
+    {% for person in personnel %}
+      <option value="{{ person.id }}" {% if request.args.get('assigned_to') == person.id|string %}selected{% endif %}>
+        {{ person.name }}
+      </option>
+    {% endfor %}
+  </select>
+</form>
+
+
 <h2>{{ feature.title }}</h2>
 <p>{{ feature.description }}</p>
 
