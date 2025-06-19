@@ -30,6 +30,18 @@
   <input type="text" class="person-autocomplete" placeholder="Search...">
 </div>
 
+<div class="mb-3">
+<label class="form-label" for="assigned_to">Assign To</label>
+<select name="assigned_to_id" id="assigned_to" class="form-control">
+  <option value="">-- Unassigned --</option>
+  {% for person in personnel %}
+    <option value="{{ person.id }}" {% if story and story.assigned_to_id == person.id %}selected{% endif %}>
+      {{ person.name }} ({{ person.role or 'No role' }})
+    </option>
+  {% endfor %}
+</select>
+</div>
+</form>
 
   <!-- Existing Notes -->
   <div class="mb-3">

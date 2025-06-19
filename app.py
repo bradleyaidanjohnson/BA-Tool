@@ -106,13 +106,16 @@ def edit_feature(feature_id):
 
 @app.route('/feature/<int:feature_id>/story/new', methods=['GET', 'POST'])
 def new_story(feature_id):
+    # print('reached')
     feature = Feature.query.get_or_404(feature_id)
     personnel = Personnel.query.order_by(Personnel.name).all()
 
     if request.method == 'POST':
+        print('reached')
         title = request.form['title']
         details = request.form['details']
         created_by_id = request.form.get("created_by_id")
+        assigned_to_id = request.form.get('assigned_to_id') or None
 
         story = UserStory(
             feature_id=feature.id,
@@ -120,6 +123,10 @@ def new_story(feature_id):
             details=details,
             created_by_id=int(created_by_id) if created_by_id else None
         )
+        if assigned_to_id:
+            story.assigned_to_id = int(assigned_to_id)
+        else:
+            story.assigned_to_id = None
         db.session.add(story)
         db.session.flush()  # Ensure story.id is available before adding attachments
 
@@ -151,29 +158,6 @@ def new_story(feature_id):
 
     return render_template('story_form.html', feature=feature, personnel=personnel)
 
-
-# @app.route('/story/<int:story_id>/edit', methods=['GET', 'POST'])
-# def edit_story(story_id):
-#     story = UserStory.query.get_or_404(story_id)
-#     if request.method == 'POST':
-#         story.title = request.form['title']
-#         story.details = request.form['details']
-#         story.created_by = request.form['created_by']
-
-#         # Handle file uploads
-#         files = request.files.getlist('attachments')
-#         for file in files:
-#             if file and allowed_file(file.filename):
-#                 filename = secure_filename(file.filename)
-#                 file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-#                 file.save(file_path)
-#                 attachment = Attachment(filename=filename, story=story)
-#                 db.session.add(attachment)
-
-#         db.session.commit()
-#         return redirect(url_for('view_project', project_id=story.feature.project_id))
-#     return render_template('story_form.html', feature=story.feature, story=story)
-
 @app.route("/story/<int:story_id>/edit", methods=["GET", "POST"])
 def edit_story(story_id):
     story = UserStory.query.get_or_404(story_id)
@@ -185,6 +169,12 @@ def edit_story(story_id):
         created_by_id = request.form.get("created_by_id")
         if created_by_id:
             story.created_by_id = int(created_by_id)
+        assigned_to_id = request.form.get('assigned_to_id') or None
+        if assigned_to_id:
+            story.assigned_to_id = int(assigned_to_id)
+        else:
+            story.assigned_to_id = None
+
 
         # Handle file uploads
         files = request.files.getlist('attachments')
@@ -380,6 +370,8 @@ def delete_personnel(personnel_id):
     db.session.delete(person)
     db.session.commit()
     return redirect(url_for('list_personnel'))
+
+
 
 
 if __name__ == '__main__':

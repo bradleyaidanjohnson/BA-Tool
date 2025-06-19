@@ -31,6 +31,13 @@ class UserStory(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     image_path = db.Column(db.String(255))
     ado_added = db.Column(db.Boolean, default=False)
+    assigned_to_id = db.Column(db.Integer, db.ForeignKey('personnel.id'), nullable=True)
+    
+    assigned_to = db.relationship(
+        'Personnel',
+        foreign_keys=[assigned_to_id],
+        backref='assigned_stories'
+    )
 
     attachments = db.relationship('Attachment', backref='story', lazy=True, cascade="all, delete-orphan")
     notes = db.relationship('Note', back_populates='story', cascade="all, delete-orphan")
