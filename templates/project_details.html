@@ -23,7 +23,7 @@
 </form>
 
 <a href="/project/{{ project.id }}/feature/new" class="btn btn-primary mb-3">+ New Feature</a>
-<a href="/personnel/add" class="btn btn-primary mb-3">+ Add Personnel</a>
+<a href="/personnel" class="btn btn-primary mb-3">View Personnel</a>
 
 <ul>
   {% for feature in project.features if not feature.parent_feature_id %}

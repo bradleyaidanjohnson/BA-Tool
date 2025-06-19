@@ -42,6 +42,26 @@ def new_project():
         return redirect(url_for('index'))
     return render_template('project_form.html')
 
+@app.route('/project/<int:project_id>/edit', methods=['GET', 'POST'])
+def edit_project(project_id):
+    project = Project.query.get_or_404(project_id)
+
+    if request.method == 'POST':
+        project.name = request.form['name']
+        project.description = request.form['description']
+        db.session.commit()
+        return redirect(url_for('index'))
+
+    return render_template('project_form.html', project=project)
+
+@app.route('/project/<int:project_id>/delete', methods=['POST'])
+def delete_project(project_id):
+    project = Project.query.get_or_404(project_id)
+    db.session.delete(project)
+    db.session.commit()
+    return redirect(url_for('index'))
+
+
 @app.route('/project/<int:project_id>')
 def view_project(project_id):
     project = Project.query.get_or_404(project_id)
@@ -341,6 +361,25 @@ def search_personnel():
 def list_personnel():
     personnel = Personnel.query.order_by(Personnel.name).all()
     return render_template('list_personnel.html', personnel=personnel)
+
+@app.route('/personnel/<int:personnel_id>/edit', methods=['GET', 'POST'])
+def edit_personnel(personnel_id):
+    person = Personnel.query.get_or_404(personnel_id)
+    if request.method == 'POST':
+        person.name = request.form['name']
+        person.email = request.form['email']
+        person.role = request.form['role']
+        person.scope = request.form['scope']
+        db.session.commit()
+        return redirect(url_for('list_personnel'))
+    return render_template('add_personnel.html', person=person)
+
+@app.route('/personnel/<int:personnel_id>/delete', methods=['POST'])
+def delete_personnel(personnel_id):
+    person = Personnel.query.get_or_404(personnel_id)
+    db.session.delete(person)
+    db.session.commit()
+    return redirect(url_for('list_personnel'))
 
 
 if __name__ == '__main__':

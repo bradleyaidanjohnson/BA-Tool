@@ -1,19 +1,32 @@
-{% extends 'base.html' %} {% block content %}
+{% extends 'base.html' %}
+{% block content %}
 
 <h2>Stories to Add to ADO - {{ project.name }}</h2>
 
 <p>Copy and paste this into ADO:</p>
 
-<pre>
+<button id="copy-btn" class="btn btn-sm btn-outline-primary mb-2">Copy to Clipboard</button>
+
+<pre id="ado-text" style="white-space: pre-wrap; user-select: all;">
   {% for s in stories %}
-    - {{ s.title }}
-      - {{ s.details or 'No details given.' }}
+- {{ s.title }}
+  - {{ s.details or 'No details given.' }}
   {% endfor %}
 </pre>
 
-<a
-  href="{{ url_for('view_project', project_id=project.id) }}"
-  class="btn btn-secondary"
-  >🔙 Back to Project</a
->
+<a href="{{ url_for('view_project', project_id=project.id) }}" class="btn btn-secondary">
+  🔙 Back to Project
+</a>
+
+<script>
+  document.getElementById('copy-btn').addEventListener('click', function() {
+    const adoText = document.getElementById('ado-text').innerText.trim();
+    navigator.clipboard.writeText(adoText).then(() => {
+      alert('Stories copied to clipboard!');
+    }).catch(err => {
+      alert('Failed to copy text: ' + err);
+    });
+  });
+</script>
+
 {% endblock %}
