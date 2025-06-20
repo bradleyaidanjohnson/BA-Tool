@@ -1,0 +1,6 @@
+# Ignore DB files
+*.db
+*.sqlite3
+
+# Ignore uploads
+/static/uploads/
