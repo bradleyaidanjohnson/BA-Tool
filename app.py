@@ -301,7 +301,7 @@ def delete_attachment(attachment_id):
     attachment = Attachment.query.get_or_404(attachment_id)
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], attachment.filename)
 
-    # Delete File from disk if it exists
+    # Delete file from disk if exists
     if os.path.exists(file_path):
         os.remove(file_path)
 
@@ -309,8 +309,10 @@ def delete_attachment(attachment_id):
     db.session.delete(attachment)
     db.session.commit()
 
-    # return redirect(url_for('edit_story', story_id=story.id))
-    return '', 204  # No content, just refresh
+    # Return updated attachment list for AJAX frontend update
+    attachments = [{'id': a.id, 'filename': a.filename} for a in story.attachments]
+    return jsonify({'attachments': attachments})
+
 
 @app.route('/story/<int:story_id>/toggle_ado', methods=['POST'])
 def toggle_ado(story_id):
@@ -450,6 +452,20 @@ def delete_personnel(personnel_id):
     db.session.commit()
     return redirect(url_for('list_personnel'))
 
+@app.route('/story/<int:story_id>/attachments/upload', methods=['POST'])
+def upload_story_attachments(story_id):
+    story = UserStory.query.get_or_404(story_id)
+    files = request.files.getlist('attachments')
+    for file in files:
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        attachment = Attachment(filename=filename, story=story)
+        db.session.add(attachment)
+    db.session.commit()
+
+    # Return updated attachment list as JSON
+    attachments = [{'id': a.id, 'filename': a.filename} for a in story.attachments]
+    return jsonify({'attachments': attachments})
 
 
 
