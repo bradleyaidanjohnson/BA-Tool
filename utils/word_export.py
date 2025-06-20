@@ -4,6 +4,21 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from datetime import datetime
 import os
+from docx.shared import RGBColor
+
+RANKING_COLORS = {
+    1: RGBColor(255, 215, 0),    # Gold (MVP)
+    2: RGBColor(192, 192, 192),  # Silver (Desired)
+    3: RGBColor(205, 127, 50),   # Bronze (Nice to Have)
+}
+
+def add_colored_paragraph(doc, text, ranking, style='Normal'):
+    p = doc.add_paragraph(style=style)
+    run = p.add_run(text)
+    color = RANKING_COLORS.get(ranking, RGBColor(0, 0, 0))
+    run.font.color.rgb = color
+    return p
+
 
 
 def add_table_of_contents(doc):
@@ -53,21 +68,50 @@ def export_feature_to_docx(feature, numbering=None, doc=None, include_notes=Fals
     level = len(numbering)
     heading_number = '.'.join(map(str, numbering))
 
-    doc.add_heading(f"{heading_number} {feature.title}", level=min(level + 1, 4))
+    # Feature heading
+    heading_text = f"{heading_number} {feature.title} ({feature.ranking})"
+
+    p = doc.add_heading(level=min(level + 1, 4))
+    run = p.add_run(heading_text)
+    color = RANKING_COLORS.get(feature.ranking, RGBColor(0, 0, 0))
+    run.font.color.rgb = color
+        
+    # Feature description
     if feature.description:
         p = doc.add_paragraph(feature.description)
         p.style.font.size = Pt(10)
 
+    # Add all feature images
+    for attach in feature.attachments:
+        if attach.filename.lower().endswith(('png', 'jpg', 'jpeg', 'gif')):
+            image_path = os.path.join("static/uploads", attach.filename)
+            if os.path.exists(image_path):
+                try:
+                    doc.add_picture(image_path, width=Inches(4.5))
+                except Exception:
+                    doc.add_paragraph(f"[Could not add feature image: {attach.filename}]")
+
+
+    # Now user stories
     for i, story in enumerate(feature.user_stories, start=1):
         letter = int_to_letters(i)
         story_label = f"{heading_number}.{letter}"
-        doc.add_paragraph(f"{story_label} {story.title}", style='List Bullet')
+
+        p = doc.add_paragraph(style='List Bullet')
+        run = p.add_run(f"{story_label} {story.title} ({story.ranking})")
+        color = RANKING_COLORS.get(story.ranking, RGBColor(0, 0, 0))
+        run.font.color.rgb = color
 
         if story.created_by:
             personnel_set.add(story.created_by)
         if story.created_by or story.created_at:
             meta = f"  By: {story.created_by.name if story.created_by else 'Unknown'} | On: {story.created_at.strftime('%Y-%m-%d') if story.created_at else 'Unknown'}"
             doc.add_paragraph(meta, style='Caption')
+
+        if story.assigned_to:
+            assigned_text = f"Assigned to: {story.assigned_to.name}"
+            p = doc.add_paragraph(assigned_text)
+            p.style.font.size = Pt(10)
 
         if story.details:
             doc.add_paragraph(story.details, style='Intense Quote')
@@ -90,17 +134,20 @@ def export_feature_to_docx(feature, numbering=None, doc=None, include_notes=Fals
 
         for attachment in story.attachments:
             if attachment.filename.lower().endswith(('png', 'jpg', 'jpeg', 'gif')):
-                image_path = os.path.join("static/uploads", attachment.filename)  # Assuming relative static path
+                image_path = os.path.join("static/uploads", attachment.filename)
                 if os.path.exists(image_path):
                     try:
                         doc.add_picture(image_path, width=Inches(4.5))
                     except Exception:
                         doc.add_paragraph(f"[Could not add image: {attachment.filename}]")
 
+
+    # recurse into subfeatures
     for i, subfeature in enumerate(feature.subfeatures, start=1):
         export_feature_to_docx(subfeature, numbering + [i], doc, include_notes, personnel_set)
 
-    if numbering == []:  # Only at root level
+    # Only add personnel list at root
+    if numbering == []:
         doc.add_page_break()
         doc.add_heading("Personnel Involved", level=1)
         table = doc.add_table(rows=1, cols=3)
