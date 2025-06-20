@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, send_file
-from models import db, Project, Feature, UserStory, Attachment, Personnel, Note
+from models import db, Project, Feature, UserStory, Attachment, Personnel, Note, FeatureAttachment
 import os
 from werkzeug.utils import secure_filename
 from utils.word_export import export_feature_to_docx, Document, add_table_of_contents
@@ -161,11 +161,35 @@ def new_feature(project_id, parent_id=None):
         title = request.form['title']
         description = request.form['description']
         ranking = int(request.form.get('ranking', 3))  # default to 3
-        feature = Feature(title=title, description=description, project_id=project_id, parent_feature_id=parent_id, ranking=ranking)
+
+        feature = Feature(
+            title=title,
+            description=description,
+            project_id=project_id,
+            parent_feature_id=parent_id,
+            ranking=ranking
+        )
         db.session.add(feature)
+        db.session.flush()  # Flush to get feature.id before commit
+
+        # Handle multiple file uploads
+        files = request.files.getlist('attachments')
+        upload_folder = app.config['UPLOAD_FOLDER']
+        for file in files:
+            if file and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                file_path = os.path.join(upload_folder, filename)
+                file.save(file_path)
+
+                featureAttachment = FeatureAttachment(filename=filename, feature_id=feature.id)
+
+                db.session.add(featureAttachment)
+
         db.session.commit()
         return redirect(url_for('view_project', project_id=project_id))
+
     return render_template('feature_form.html', project_id=project_id, parent_id=parent_id)
+
 
 @app.route('/feature/<int:feature_id>/edit', methods=['GET', 'POST'])
 def edit_feature(feature_id):
@@ -173,10 +197,23 @@ def edit_feature(feature_id):
     if request.method == 'POST':
         feature.title = request.form['title']
         feature.description = request.form['description']
-        feature.ranking = request.form['ranking']
+        feature.ranking = int(request.form['ranking'])
+
+        # Handle multiple file uploads
+        files = request.files.getlist('attachments')
+        upload_folder = app.config['UPLOAD_FOLDER']
+        for file in files:
+            if file and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                file_path = os.path.join(upload_folder, filename)
+                file.save(file_path)
+
+                featureAttachment = FeatureAttachment(filename=filename, feature_id=feature.id)
+                db.session.add(featureAttachment)
+
         db.session.commit()
         return redirect(url_for('view_feature', feature_id=feature.id))
-    
+
     return render_template('feature_form.html', feature=feature, project_id=feature.project_id)
 
 
@@ -467,6 +504,22 @@ def upload_story_attachments(story_id):
     attachments = [{'id': a.id, 'filename': a.filename} for a in story.attachments]
     return jsonify({'attachments': attachments})
 
+@app.route('/feature/attachment/<int:attachment_id>/delete', methods=['POST'])
+def delete_feature_attachment(attachment_id):
+    attachment = FeatureAttachment.query.get_or_404(attachment_id)  # assuming you have a separate FeatureAttachment model
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], attachment.filename)
+
+    # Delete file from disk if it exists
+    if os.path.exists(file_path):
+        os.remove(file_path)
+
+    feature = attachment.feature
+    db.session.delete(attachment)
+    db.session.commit()
+
+    # Return updated attachment list for AJAX update
+    attachments = [{'id': a.id, 'filename': a.filename} for a in feature.attachments]
+    return jsonify({'attachments': attachments})
 
 
 if __name__ == '__main__':

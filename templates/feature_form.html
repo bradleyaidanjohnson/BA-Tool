@@ -2,29 +2,122 @@
 {% block content %}
 <h2>{{ 'Edit' if feature else 'Add' }} Feature</h2>
 
-<form method="POST">
+<form method="POST" enctype="multipart/form-data">  {# important for file uploads #}
   <div class="mb-3">
     <label class="form-label">Title</label>
     <input name="title" class="form-control" value="{{ feature.title if feature else '' }}" required />
   </div>
 
-<div class="mb-3">
-  <label class="form-label">Priority</label>
-  <select name="ranking" class="form-control">
-    <option value="1" {% if feature and feature.ranking == 1 %}selected{% endif %}>MVP</option>
-    <option value="2" {% if feature and feature.ranking == 2 %}selected{% endif %}>Desired</option>
-    <option value="3" {% if feature and feature.ranking == 3 %}selected{% endif %}>Nice to Have</option>
-  </select>
-</div>
-
-
+  <div class="mb-3">
+    <label class="form-label">Priority</label>
+    <select name="ranking" class="form-control">
+      <option value="1" {% if feature and feature.ranking == 1 %}selected{% endif %}>MVP</option>
+      <option value="2" {% if feature and feature.ranking == 2 %}selected{% endif %}>Desired</option>
+      <option value="3" {% if feature and feature.ranking == 3 %}selected{% endif %}>Nice to Have</option>
+    </select>
+  </div>
 
   <div class="mb-3">
     <label class="form-label">Description</label>
     <textarea name="description" class="form-control" required>{{ feature.description if feature else '' }}</textarea>
   </div>
 
+  <!-- Attachments upload -->
+  <div class="mb-3">
+    <label class="form-label">Attachments</label>
+    <input
+      type="file"
+      id="attachment_input"
+      name="attachments"
+      class="form-control"
+      multiple
+    />
+  </div>
+
+  <!-- Existing attachments list -->
+  {% if feature and feature.attachments %}
+  <ul id="feature-attachments-list" class="list-group mb-3">
+    {% for file in feature.attachments %}
+    <li class="list-group-item d-flex justify-content-between align-items-start">
+      {% if file.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')) %}
+      <img
+        src="{{ url_for('static', filename='uploads/' ~ file.filename) }}"
+        style="max-height: 100px; margin-right: 10px"
+        alt="{{ file.filename }}"
+      />
+      {% endif %}
+      <a href="{{ url_for('static', filename='uploads/' ~ file.filename) }}" target="_blank">{{ file.filename }}</a>
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-danger"
+        onclick="deleteFeatureAttachment({{ file.id }})"
+      >
+        Delete
+      </button>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
   <button type="submit" class="btn btn-success">{{ 'Save Changes' if feature else 'Save Feature' }}</button>
   <a href="/project/{{ project_id }}" class="btn btn-secondary">Cancel</a>
 </form>
+
+<script>
+function deleteFeatureAttachment(id) {
+  if (!confirm('Are you sure you want to delete this attachment?')) {
+    return;
+  }
+
+  fetch(`/feature/attachment/${id}/delete`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCsrfToken(), // adjust if you use CSRF protection
+    },
+  })
+    .then(response => {
+      if (!response.ok) throw new Error('Failed to delete attachment');
+      return response.json();
+    })
+    .then(data => {
+      updateFeatureAttachmentsList(data.attachments);
+    })
+    .catch(error => {
+      alert(error.message);
+    });
+}
+
+function updateFeatureAttachmentsList(attachments) {
+  const list = document.getElementById('feature-attachments-list');
+  if (!list) return;
+  list.innerHTML = '';
+  attachments.forEach(file => {
+    const li = document.createElement('li');
+    li.className = 'list-group-item d-flex justify-content-between align-items-start';
+
+    const isImage = /\.(png|jpg|jpeg|gif)$/i.test(file.filename);
+    let innerHTML = '';
+    if (isImage) {
+      innerHTML += `<img src="/static/uploads/${file.filename}" style="max-height: 100px; margin-right: 10px" alt="${file.filename}" />`;
+    }
+    innerHTML += `<a href="/static/uploads/${file.filename}" target="_blank">${file.filename}</a>`;
+    li.innerHTML = innerHTML;
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-sm btn-outline-danger';
+    btn.textContent = 'Delete';
+    btn.onclick = () => deleteFeatureAttachment(file.id);
+
+    li.appendChild(btn);
+    list.appendChild(li);
+  });
+}
+
+function getCsrfToken() {
+  const meta = document.querySelector('meta[name=csrf-token]');
+  return meta ? meta.getAttribute('content') : '';
+}
+</script>
 {% endblock %}

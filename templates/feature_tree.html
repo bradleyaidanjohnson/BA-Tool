@@ -2,6 +2,19 @@
 
 {% if not feature_ranking_filter or feature.ranking <= feature_ranking_filter %}
 <li class="mb-2 feature-rank-{{ feature.ranking }}">
+  
+  {# Find first feature image #}
+  {% set feature_image = None %}
+  {% for attach in feature.attachments %}
+    {% set feature_image = attach if attach.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')) else None %}
+{% if feature_image %}
+  <img src="{{ url_for('static', filename='uploads/' ~ feature_image.filename) }}"
+       alt="Feature Image"
+       style="max-height:50px; max-width:50px; object-fit:contain; border-radius:4px; margin-right:8px;" />
+{% endif %}
+
+  {% endfor %}
+  
   {% if not is_root %}
     <a href="{{ url_for('view_feature', feature_id=feature.id) }}">
       <strong>{{ feature.title }}</strong>
@@ -24,8 +37,17 @@
   {% if feature.user_stories %}
     <ul class="mt-1">
       {% for story in feature.user_stories if story.id in filtered_story_ids and (show_added or not story.ado_added) %}
-      <li class="story-rank-{{ story.ranking }}">
+      
+      {# Find first story image #}
+      {% set story_image = None %}
+      {% for attach in story.attachments %}
+    {% set story_image = attach if attach.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')) else None %}
+    {% if story_image %}
+<img src="{{ url_for('static', filename='uploads/' ~ story_image.filename) }}" alt="Story Image" style="max-height:50px; max-width:50px; object-fit:contain; border-radius:4px; margin-right:8px;" />
 
+        {% endif %}
+      {% endfor %}
+        
         <form onsubmit="toggleAdo({{ story.id }}); return false;" style="display: inline">
           <button type="submit" class="btn btn-sm {{ 'btn-success' if story.ado_added else 'btn-outline-secondary' }}">
             {{ '✅ ADO' if story.ado_added else '✚ Add to ADO' }}

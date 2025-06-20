@@ -51,6 +51,14 @@ class Attachment(db.Model):
     filename = db.Column(db.String(200), nullable=False)
     story_id = db.Column(db.Integer, db.ForeignKey('user_story.id'), nullable=False)
 
+class FeatureAttachment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    filename = db.Column(db.String(200), nullable=False)
+    feature_id = db.Column(db.Integer, db.ForeignKey('feature.id'), nullable=False)
+
+    feature = db.relationship('Feature', backref='attachments')
+
+
 class Personnel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
