@@ -8,6 +8,17 @@
     <input name="title" class="form-control" value="{{ feature.title if feature else '' }}" required />
   </div>
 
+<div class="mb-3">
+  <label class="form-label">Priority</label>
+  <select name="ranking" class="form-control">
+    <option value="1" {% if feature and feature.ranking == 1 %}selected{% endif %}>MVP</option>
+    <option value="2" {% if feature and feature.ranking == 2 %}selected{% endif %}>Desired</option>
+    <option value="3" {% if feature and feature.ranking == 3 %}selected{% endif %}>Nice to Have</option>
+  </select>
+</div>
+
+
+
   <div class="mb-3">
     <label class="form-label">Description</label>
     <textarea name="description" class="form-control" required>{{ feature.description if feature else '' }}</textarea>

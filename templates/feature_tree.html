@@ -1,5 +1,7 @@
-  {% set is_root = root_feature and feature.id == root_feature.id %}
-<li class="mb-2">
+{% set is_root = root_feature and feature.id == root_feature.id %}
+
+{% if not feature_ranking_filter or feature.ranking <= feature_ranking_filter %}
+<li class="mb-2 feature-rank-{{ feature.ranking }}">
   {% if not is_root %}
     <a href="{{ url_for('view_feature', feature_id=feature.id) }}">
       <strong>{{ feature.title }}</strong>
@@ -8,79 +10,56 @@
     <strong>{{ feature.title }}</strong>
   {% endif %}
 
-</a>{% if not is_root %}
-  - {{ feature.description }}
-{% endif %}
+  {% if not is_root %}
+    - {{ feature.description }}
+  {% endif %}
 
-<a href="{{ url_for('edit_feature', feature_id=feature.id) }}" class="btn btn-sm btn-outline-secondary">✎ Edit</a>
+  <a href="{{ url_for('edit_feature', feature_id=feature.id) }}" class="btn btn-sm btn-outline-secondary">✎ Edit</a>
 
   <div class="mt-1 mb-1">
-    <a
-      href="/feature/{{ feature.id }}/story/new"
-      class="btn btn-sm btn-outline-primary"
-      >+ Story</a
-    >
-    <a
-      href="/project/{{ feature.project_id }}/feature/{{ feature.id }}/child"
-      class="btn btn-sm btn-outline-secondary"
-      >+ Subfeature</a
-    >
+    <a href="/feature/{{ feature.id }}/story/new" class="btn btn-sm btn-outline-primary">+ Story</a>
+    <a href="/project/{{ feature.project_id }}/feature/{{ feature.id }}/child" class="btn btn-sm btn-outline-secondary">+ Subfeature</a>
   </div>
-{% if feature.user_stories %}
-  <ul class="mt-1">
-    {% for story in feature.user_stories if story.id in filtered_story_ids and (show_added or not story.ado_added) %}
-    <li>
-      <form
-        onsubmit="toggleAdo({{ story.id }}); return false;"
-        style="display: inline"
-      >
-        <button
-          type="submit"
-          class="btn btn-sm {{ 'btn-success' if story.ado_added else  'btn-outline-secondary' }}"
-        >
-          {{ '✅ ADO' if story.ado_added else '✚ Add to ADO' }}
-        </button>
-      </form>
-      <strong>
-        <a href="{{ url_for('edit_story', story_id=story.id) }}">{{ story.title }}</a>
-      </strong> - {{ story.created_by or "Unknown" }} |
-      Assigned to: {{ story.assigned_to.name if story.assigned_to else 'Unassigned' }}<br />
-      <em>{{ story.details }}</em>
 
-      {% if story.attachments %}
-      <ul>
-        {% for file in story.attachments %}
-        <li>
-          📎
-          <a href="{{ url_for('static', filename='uploads/' ~ file.filename) }}" target="_blank">
-            {{ file.filename }}
-          </a>
-        </li>
-        {% endfor %}
-      </ul>
-      {% endif %}
+  {% if feature.user_stories %}
+    <ul class="mt-1">
+      {% for story in feature.user_stories if story.id in filtered_story_ids and (show_added or not story.ado_added) %}
+      <li class="story-rank-{{ story.ranking }}">
 
-      <form
-        action="{{ url_for('delete_story', story_id=story.id) }}"
-        method="post"
-        style="display: inline"
-      >
-        <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure?')">
-          Delete
-        </button>
-      </form>
-    </li>
-    {% endfor %}
-  </ul>
-{% endif %}
+        <form onsubmit="toggleAdo({{ story.id }}); return false;" style="display: inline">
+          <button type="submit" class="btn btn-sm {{ 'btn-success' if story.ado_added else 'btn-outline-secondary' }}">
+            {{ '✅ ADO' if story.ado_added else '✚ Add to ADO' }}
+          </button>
+        </form>
+        <strong><a href="{{ url_for('edit_story', story_id=story.id) }}">{{ story.title }}</a></strong> - {{ story.created_by or "Unknown" }} |
+        Assigned to: {{ story.assigned_to.name if story.assigned_to else 'Unassigned' }}<br />
+        <em>{{ story.details }}</em>
 
-{% if feature.subfeatures %}
-  <ul>
-    {% for sub in feature.subfeatures %}
-      {% set feature = sub %}
-      {% include 'feature_tree.html' %}
-    {% endfor %}
-  </ul>
-{% endif %}
+        {% if story.attachments %}
+        <ul>
+          {% for file in story.attachments %}
+          <li>
+            📎 <a href="{{ url_for('static', filename='uploads/' ~ file.filename) }}" target="_blank">{{ file.filename }}</a>
+          </li>
+          {% endfor %}
+        </ul>
+        {% endif %}
 
+        <form action="{{ url_for('delete_story', story_id=story.id) }}" method="post" style="display: inline">
+          <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure?')">Delete</button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  {% if feature.subfeatures %}
+    <ul>
+      {% for sub in feature.subfeatures %}
+        {% set feature = sub %}
+        {% include 'feature_tree.html' %}
+      {% endfor %}
+    </ul>
+  {% endif %}
 </li>
+{% endif %}

@@ -16,6 +16,30 @@
   </select>
 </form>
 
+<form method="get" class="mb-3 d-flex gap-3 align-items-end">
+
+  <div>
+    <label for="feature_ranking_filter">Filter Features by Priority:</label>
+    <select name="feature_ranking" id="feature_ranking_filter" onchange="this.form.submit()">
+      <option value="">-- All --</option>
+      <option value="1" {% if feature_ranking_filter == 1 %}selected{% endif %}>1 - MVP</option>
+      <option value="2" {% if feature_ranking_filter == 2 %}selected{% endif %}>1 & 2</option>
+      <option value="3" {% if feature_ranking_filter == 3 %}selected{% endif %}>1, 2 & 3</option>
+    </select>
+  </div>
+
+  <div>
+    <label for="story_ranking_filter">Filter Stories by Priority:</label>
+    <select name="story_ranking" id="story_ranking_filter" onchange="this.form.submit()">
+      <option value="">-- All --</option>
+      <option value="1" {% if story_ranking_filter == 1 %}selected{% endif %}>1 - Release Req</option>
+      <option value="2" {% if story_ranking_filter == 2 %}selected{% endif %}>1 & 2</option>
+      <option value="3" {% if story_ranking_filter == 3 %}selected{% endif %}>1, 2 & 3</option>
+    </select>
+  </div>
+
+</form>
+
 
 
 <div class="mb-3">

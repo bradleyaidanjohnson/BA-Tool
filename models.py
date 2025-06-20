@@ -17,6 +17,8 @@ class Feature(db.Model):
     title = db.Column(db.String(200), nullable=True)
     description = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    ranking = db.Column(db.Integer)  # 1=MVP, 2=Desired, 3=Nice to have
+
 
     parent = db.relationship('Feature', remote_side=[id], backref='subfeatures')
     user_stories = db.relationship('UserStory', backref='feature', lazy=True, cascade="all, delete-orphan")
@@ -32,6 +34,8 @@ class UserStory(db.Model):
     image_path = db.Column(db.String(255))
     ado_added = db.Column(db.Boolean, default=False)
     assigned_to_id = db.Column(db.Integer, db.ForeignKey('personnel.id'), nullable=True)
+    ranking = db.Column(db.Integer)  # 1=MVP, 2=Desired, 3=Nice to have
+
     
     assigned_to = db.relationship(
         'Personnel',

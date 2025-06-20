@@ -9,6 +9,18 @@
     <input name="title" class="form-control" value="{{ story.title if story else '' }}" required />
   </div>
 
+  <!-- Ranking -->
+<div class="mb-3">
+  <label class="form-label">Priority</label>
+  <select name="ranking" class="form-control">
+    <option value="1" {% if story and story.ranking == 1 %}selected{% endif %}>Release Requirement</option>
+    <option value="2" {% if story and story.ranking == 2 %}selected{% endif %}>This or Next Sprint</option>
+    <option value="3" {% if story and story.ranking == 3 %}selected{% endif %}>Backlog</option>
+  </select>
+</div>
+
+
+
   <!-- Details -->
   <div class="mb-3">
     <label class="form-label">Details</label>
