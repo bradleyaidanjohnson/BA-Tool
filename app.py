@@ -276,6 +276,40 @@ def move_feature(feature_id):
         feature_options=feature_options
     )
 
+@app.route('/feature/<int:feature_id>/delete', methods=['POST'])
+def delete_feature(feature_id):
+    feature = Feature.query.get_or_404(feature_id)
+
+    # Remove feature attachments files & DB entries
+    upload_folder = app.config['UPLOAD_FOLDER']
+    for attachment in feature.attachments:
+        file_path = os.path.join(upload_folder, attachment.filename)
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        db.session.delete(attachment)
+
+    # Optionally, delete user stories attached to feature, including their attachments
+    for story in feature.user_stories:
+        for story_attachment in story.attachments:
+            story_file_path = os.path.join(upload_folder, story_attachment.filename)
+            if os.path.exists(story_file_path):
+                os.remove(story_file_path)
+            db.session.delete(story_attachment)
+        db.session.delete(story)
+
+    # Optionally, recursively delete subfeatures (if cascade not handled by DB)
+    def delete_subfeatures(f):
+        for sub in f.subfeatures:
+            delete_subfeatures(sub)
+            db.session.delete(sub)
+    delete_subfeatures(feature)
+
+    # Delete the feature itself
+    db.session.delete(feature)
+    db.session.commit()
+
+    # Redirect to the project view page after deletion
+    return redirect(url_for('view_project', project_id=feature.project_id))
 
 
 
