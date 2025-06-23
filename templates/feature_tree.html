@@ -47,39 +47,50 @@
   {% endfor %}
 {% endmacro %}
 
-  {% if feature.user_stories %}
-    <ul class="mt-1">
-  {% for story in feature.user_stories if story.id in filtered_story_ids and (show_added or not story.ado_added) %}
-  <li class="story-rank-{{ story.ranking }}" style="margin-bottom: 10px;">
-    {{ first_image(story.attachments) }}
-        
+{% if feature.user_stories %}
+  <ul class="mt-1">
+    {% for story in feature.user_stories if story.id in filtered_story_ids and (show_added or not story.ado_added) %}
+      <li class="story-rank-{{ story.ranking }}" style="margin-bottom: 10px;">
+        {{ first_image(story.attachments) }}
+
         <form onsubmit="toggleAdo({{ story.id }}); return false;" style="display: inline">
           <button type="submit" class="btn btn-sm {{ 'btn-success' if story.ado_added else 'btn-outline-secondary' }}">
             {{ '✅ ADO' if story.ado_added else '✚ Add to ADO' }}
           </button>
         </form>
-        <strong><a href="{{ url_for('edit_story', story_id=story.id) }}">{{ story.title }}</a></strong> - {{ story.created_by or "Unknown" }} |
-        Assigned to: {{ story.assigned_to.name if story.assigned_to else 'Unassigned' }}<br />
-        <em>{{ story.details }}</em>
 
-        {% if story.attachments %}
-        <ul>
-          {% for file in story.attachments %}
-          <li>
-            📎 <a href="{{ url_for('static', filename='uploads/' ~ file.filename) }}" target="_blank">{{ file.filename }}</a>
-          </li>
-          {% endfor %}
-        </ul>
-        {% endif %}
-        
+        <strong><a href="{{ url_for('edit_story', story_id=story.id) }}">{{ story.title }}</a></strong>
 
-        <form action="{{ url_for('delete_story', story_id=story.id) }}" method="post" style="display: inline">
-          <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure?')">Delete</button>
-        </form>
+        <span style="margin-left: 10px;">
+          {{ story.assigned_to.name if story.assigned_to else 'Unassigned' }}
+        </span>
+
+        <button type="button" class="btn btn-sm btn-outline-info toggle-story-details" style="margin-left: 8px;">
+          Show Details
+        </button>
+
+        <div class="story-details" style="display: none; margin-top: 0.5rem; padding-left: 1rem; color: #555;">
+          <em>{{ story.details }}</em>
+
+          {% if story.attachments %}
+            <ul>
+              {% for file in story.attachments %}
+                <li>
+                  📎 <a href="{{ url_for('static', filename='uploads/' ~ file.filename) }}" target="_blank">{{ file.filename }}</a>
+                </li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+
+          <form action="{{ url_for('delete_story', story_id=story.id) }}" method="post" style="display: inline">
+            <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure?')">Delete</button>
+          </form>
+        </div>
       </li>
-      {% endfor %}
-    </ul>
-  {% endif %}
+    {% endfor %}
+  </ul>
+{% endif %}
+
 
   {% if feature.subfeatures %}
     <ul>

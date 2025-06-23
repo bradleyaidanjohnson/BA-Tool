@@ -89,4 +89,20 @@
   const meta = document.querySelector('meta[name=csrf-token]');
   return meta ? meta.getAttribute('content') : '';
 }
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.toggle-story-details').forEach(function(button) {
+      button.addEventListener('click', function() {
+        const detailsDiv = this.nextElementSibling;
+        if (!detailsDiv) return;
+
+        if (detailsDiv.style.display === 'none' || detailsDiv.style.display === '') {
+          detailsDiv.style.display = 'block';
+          this.textContent = 'Hide Details';
+        } else {
+          detailsDiv.style.display = 'none';
+          this.textContent = 'Show Details';
+        }
+      });
+    });
+  });
 </script>
