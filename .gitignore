@@ -1,6 +1,9 @@
 # Ignore DB files
+instance/
 *.db
 *.sqlite3
+*.pyc
+__pycache__/
 
 # Ignore uploads
 /static/uploads/
