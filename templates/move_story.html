@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Move Story: {{ story.title }}</h2>
+<form method="POST">
+  <label for="new_feature_id">New Feature:</label>
+  <select name="new_feature_id" class="form-control">
+    {% for f in feature_options %}
+      <option value="{{ f.id }}">{{ f.path }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="btn btn-primary mt-2">Move</button>
+  <button type="button" class="btn btn-secondary mt-2" onclick="window.history.back()">Cancel</button>
+
+</form>
+
+{% endblock %}

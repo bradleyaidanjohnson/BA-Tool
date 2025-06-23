@@ -91,31 +91,42 @@
     <button type="button" class="btn btn-secondary" onclick="addNoteBlock()">+ Add Note</button>
   </div>
 
-  <!-- Attachments -->
-  <div class="mb-3">
-    <label class="form-label">Attachments</label>
-    <input type="file" name="attachments" class="form-control" multiple />
-  </div>
+ <!-- Attachments -->
+<div class="mb-3">
+  <label class="form-label">Attachments</label>
+  <input
+    type="file"
+    id="attachment_input"
+    name="attachments"
+    class="form-control"
+    multiple
+  />
+</div>
 
-  {% if story and story.attachments %}
-  <h5>Attached Files</h5>
-  <ul class="list-group mb-3">
-    {% for file in story.attachments %}
-    <li class="list-group-item d-flex justify-content-between align-items-start">
-      {% if file.filename.endswith(('.png', '.jpg', '.jpeg', '.gif')) %}
-      <img src="{{ url_for('static', filename='uploads/' ~ file.filename) }}" style="max-height: 100px; margin-right: 10px" />
-      {% endif %}
-      <a href="{{ url_for('static', filename='uploads/' ~ file.filename) }}" target="_blank">{{ file.filename }}</a>
-      <button type="button"
-        class="btn btn-sm btn-outline-danger"
-        onclick="deleteAttachment({{ file.id }})">
-  Delete
-</button>
+{% if story and story.attachments %}
+<ul id="attachments_list" class="list-group mb-3">
+  {% for file in story.attachments %}
+  <li class="list-group-item d-flex justify-content-between align-items-start">
+    {% if file.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')) %}
+    <img
+      src="{{ url_for('static', filename='uploads/' ~ file.filename) }}"
+      style="max-height: 100px; margin-right: 10px"
+    />
+    {% endif %}
+    <a href="{{ url_for('static', filename='uploads/' ~ file.filename) }}" target="_blank">{{ file.filename }}</a>
+    <button
+      type="button"
+      class="btn btn-sm btn-outline-danger"
+      onclick="deleteAttachment({{ file.id }})"
+    >
+      Delete
+    </button>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
 
-    </li>
-    {% endfor %}
-  </ul>
-  {% endif %}
+
 
   <!-- Submit and Cancel Buttons (still inside main form) -->
   <div class="d-flex justify-content-between align-items-center">
@@ -141,6 +152,7 @@
 <!-- Scripts -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+{% if story and story.id %}
 <script>
 function addNoteBlock() {
   const personnelOptions = `{% for person in personnel %}<option value="{{ person.id }}">{{ person.name }}</option>{% endfor %}`;
@@ -178,6 +190,93 @@ function deleteAttachment(attachmentId) {
     }).then(() => location.reload());
   }
 }
-</script>
 
+  document.getElementById('attachment_input').addEventListener('change', async function(event) {
+    const files = event.target.files;
+    if (!files.length) return;
+
+    const formData = new FormData();
+    for (const file of files) {
+      formData.append('attachments', file);
+    }
+
+    // Replace URL with your actual upload endpoint for story attachments
+    const uploadUrl = "{{ url_for('upload_story_attachments', story_id=story.id) }}";
+
+    try {
+      const response = await fetch(uploadUrl, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest' // optional, to detect AJAX on backend
+        }
+      });
+
+      if (!response.ok) {
+        alert('Upload failed');
+        return;
+      }
+
+      const data = await response.json();
+
+      // `data.attachments` expected to be list of current attachments with id & filename
+      updateAttachmentsList(data.attachments);
+
+      // Clear the input after successful upload
+      event.target.value = '';
+    } catch (error) {
+      alert('Upload error: ' + error.message);
+    }
+  });
+
+  function updateAttachmentsList(attachments) {
+    const list = document.getElementById('attachments_list');
+    list.innerHTML = '';
+
+    attachments.forEach(file => {
+      const li = document.createElement('li');
+      li.className = 'list-group-item d-flex justify-content-between align-items-start';
+
+      const isImage = /\.(png|jpe?g|gif)$/i.test(file.filename);
+      let innerHTML = '';
+      if (isImage) {
+        innerHTML += `<img src="/static/uploads/${file.filename}" style="max-height: 100px; margin-right: 10px" />`;
+      }
+      innerHTML += `<a href="/static/uploads/${file.filename}" target="_blank">${file.filename}</a>`;
+      innerHTML += `<button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteAttachment(${file.id})">Delete</button>`;
+
+      li.innerHTML = innerHTML;
+      list.appendChild(li);
+    });
+  }
+
+  async function deleteAttachment(id) {
+    if (!confirm('Are you sure you want to delete this attachment?')) return;
+
+    try {
+      // Replace URL with your actual delete endpoint
+      const deleteUrl = `/attachment/${id}/delete`;
+
+      const response = await fetch(deleteUrl, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': '{{ csrf_token() }}',  // if you use CSRF protection
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      });
+
+      if (!response.ok) {
+        alert('Delete failed');
+        return;
+      }
+
+      const data = await response.json();
+      updateAttachmentsList(data.attachments);
+
+    } catch (error) {
+      alert('Delete error: ' + error.message);
+    }
+  }
+</script>
+{% endif %}
 {% endblock %}

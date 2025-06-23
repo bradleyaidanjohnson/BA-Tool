@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify, send_file
+from flask import Flask, render_template, request, redirect, url_for, jsonify, send_file, flash
 from models import db, Project, Feature, UserStory, Attachment, Personnel, Note, FeatureAttachment
 import os
 from werkzeug.utils import secure_filename
@@ -7,6 +7,7 @@ import io
 from datetime import datetime
 
 app = Flask(__name__)
+app.secret_key = 'your-very-secret-key-here'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///project_data.db'
 app.config['SQLALCHEMY_TRACK MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
@@ -24,6 +25,28 @@ def build_feature_breadcrumbs(feature):
         current = current.parent  # assuming your Feature model has this relationship
     breadcrumbs.reverse()
     return breadcrumbs
+
+def get_feature_path(feature):
+    path = []
+    while feature:
+        path.insert(0, feature.title)
+        feature = feature.parent  # however you're tracking hierarchy
+    return " > ".join(path)
+
+def is_descendant(feature, potential_parent):
+    """
+    Returns True if potential_parent is a descendant of feature.
+    """
+    if not potential_parent:
+        return False
+
+    # Traverse up the tree from potential_parent
+    current = potential_parent
+    while current:
+        if current.id == feature.id:
+            return True  # cycle detected
+        current = current.parent
+    return False
 
 
 @app.route('/')
@@ -217,6 +240,45 @@ def edit_feature(feature_id):
     return render_template('feature_form.html', feature=feature, project_id=feature.project_id)
 
 
+@app.route("/feature/<int:feature_id>/move", methods=["GET", "POST"])
+def move_feature(feature_id):
+    feature = Feature.query.get_or_404(feature_id)
+    all_features = Feature.query.filter(Feature.id != feature_id).all()
+
+    feature_options = [
+        {"id": f.id, "path": get_feature_path(f)}
+        for f in all_features
+    ]
+
+    if request.method == "POST":
+        new_parent_id = request.form.get("new_parent_id")
+        if new_parent_id:
+            new_parent_id = int(new_parent_id)
+            new_parent = Feature.query.get(new_parent_id)
+            if is_descendant(feature, new_parent):
+                flash("Cannot move a feature inside one of its own descendants.", "danger")
+                return redirect(request.url)
+            feature.parent_feature_id = new_parent_id
+        else:
+            feature.parent_feature_id = None
+
+        db.session.commit()
+        if feature.parent_feature_id:
+            return redirect(url_for("view_feature", feature_id=feature.parent_feature_id))
+        else:
+            # No parent means top-level feature, so redirect to project view or wherever you want
+            return redirect(url_for("view_project", project_id=feature.project_id))
+
+
+    return render_template(
+        "move_feature.html",
+        feature=feature,
+        feature_options=feature_options
+    )
+
+
+
+
 @app.route('/feature/<int:feature_id>/story/new', methods=['GET', 'POST'])
 def new_story(feature_id):
     # print('reached')
@@ -323,6 +385,29 @@ def edit_story(story_id):
         return redirect(url_for("edit_story", story_id=story.id))
 
     return render_template("story_form.html", story=story, personnel=personnel, feature=story.feature)
+
+@app.route("/story/<int:story_id>/move", methods=["GET", "POST"])
+def move_story(story_id):
+    story = UserStory.query.get_or_404(story_id)
+    all_features = Feature.query.all()
+
+    feature_options = [
+        {"id": f.id, "path": get_feature_path(f)}
+        for f in all_features
+    ]
+
+    if request.method == "POST":
+        new_feature_id = request.form.get("new_feature_id")
+        story.feature_id = new_feature_id
+        db.session.commit()
+        return redirect(url_for("view_feature", feature_id=new_feature_id))
+
+    return render_template(
+        "move_story.html",
+        story=story,
+        feature_options=feature_options
+    )
+
 
 
 @app.route('/story/<int:story_id>/delete', methods=['POST'])

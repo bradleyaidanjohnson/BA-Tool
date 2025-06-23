@@ -32,6 +32,8 @@
   <div class="mt-1 mb-1">
     <a href="/feature/{{ feature.id }}/story/new" class="btn btn-sm btn-outline-primary">+ Story</a>
     <a href="/project/{{ feature.project_id }}/feature/{{ feature.id }}/child" class="btn btn-sm btn-outline-secondary">+ Subfeature</a>
+    <a href="{{ url_for('move_feature', feature_id=feature.id) }}" class="btn btn-sm btn-outline-secondary">⇄ Move</a>
+
   </div>
 
   {% if feature.user_stories %}
@@ -66,6 +68,8 @@
           {% endfor %}
         </ul>
         {% endif %}
+        <a href="{{ url_for('move_story', story_id=story.id) }}" class="btn btn-sm btn-outline-secondary">⇄ Move</a>
+
 
         <form action="{{ url_for('delete_story', story_id=story.id) }}" method="post" style="display: inline">
           <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure?')">Delete</button>
