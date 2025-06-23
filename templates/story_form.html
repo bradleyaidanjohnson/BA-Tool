@@ -103,28 +103,31 @@
   />
 </div>
 
-{% if story and story.attachments %}
 <ul id="attachments_list" class="list-group mb-3">
-  {% for file in story.attachments %}
-  <li class="list-group-item d-flex justify-content-between align-items-start">
-    {% if file.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')) %}
-    <img
-      src="{{ url_for('static', filename='uploads/' ~ file.filename) }}"
-      style="max-height: 100px; margin-right: 10px"
-    />
-    {% endif %}
-    <a href="{{ url_for('static', filename='uploads/' ~ file.filename) }}" target="_blank">{{ file.filename }}</a>
-    <button
-      type="button"
-      class="btn btn-sm btn-outline-danger"
-      onclick="deleteAttachment({{ file.id }})"
-    >
-      Delete
-    </button>
-  </li>
-  {% endfor %}
+  {% if story and story.attachments %}
+    {% for file in story.attachments %}
+      <li class="list-group-item d-flex justify-content-between align-items-start">
+        {% if file.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')) %}
+        <img
+          src="{{ url_for('static', filename='uploads/' ~ file.filename) }}"
+          style="max-height: 100px; margin-right: 10px"
+        />
+        {% endif %}
+        <a href="{{ url_for('static', filename='uploads/' ~ file.filename) }}" target="_blank">{{ file.filename }}</a>
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-danger"
+          onclick="deleteAttachment({{ file.id }})"
+        >
+          Delete
+        </button>
+      </li>
+    {% endfor %}
+  {% else %}
+    <li class="list-group-item">No attachments yet.</li>
+  {% endif %}
 </ul>
-{% endif %}
+
 
 
 
@@ -152,6 +155,10 @@
 <!-- Scripts -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+
+
+
+
 {% if story and story.id %}
 <script>
 function addNoteBlock() {

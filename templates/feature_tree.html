@@ -35,20 +35,23 @@
     <a href="{{ url_for('move_feature', feature_id=feature.id) }}" class="btn btn-sm btn-outline-secondary">⇄ Move</a>
 
   </div>
+{% macro first_image(attachments) %}
+  {% set found = false %}
+  {% for attach in attachments %}
+    {% if not found and attach.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')) %}
+      {% set found = true %}
+      <img src="{{ url_for('static', filename='uploads/' ~ attach.filename) }}"
+           alt="Story Image"
+           style="max-height:50px; max-width:50px; object-fit:contain; border-radius:4px; margin-right:8px;" />
+    {% endif %}
+  {% endfor %}
+{% endmacro %}
 
   {% if feature.user_stories %}
     <ul class="mt-1">
-      {% for story in feature.user_stories if story.id in filtered_story_ids and (show_added or not story.ado_added) %}
-      
-      {# Find first story image #}
-      {% set story_image = None %}
-      {% for attach in story.attachments %}
-    {% set story_image = attach if attach.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')) else None %}
-    {% if story_image %}
-<img src="{{ url_for('static', filename='uploads/' ~ story_image.filename) }}" alt="Story Image" style="max-height:50px; max-width:50px; object-fit:contain; border-radius:4px; margin-right:8px;" />
-
-        {% endif %}
-      {% endfor %}
+  {% for story in feature.user_stories if story.id in filtered_story_ids and (show_added or not story.ado_added) %}
+  <li class="story-rank-{{ story.ranking }}" style="margin-bottom: 10px;">
+    {{ first_image(story.attachments) }}
         
         <form onsubmit="toggleAdo({{ story.id }}); return false;" style="display: inline">
           <button type="submit" class="btn btn-sm {{ 'btn-success' if story.ado_added else 'btn-outline-secondary' }}">
@@ -68,8 +71,7 @@
           {% endfor %}
         </ul>
         {% endif %}
-        <a href="{{ url_for('move_story', story_id=story.id) }}" class="btn btn-sm btn-outline-secondary">⇄ Move</a>
-
+        
 
         <form action="{{ url_for('delete_story', story_id=story.id) }}" method="post" style="display: inline">
           <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure?')">Delete</button>

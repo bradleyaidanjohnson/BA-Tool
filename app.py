@@ -5,6 +5,12 @@ from werkzeug.utils import secure_filename
 from utils.word_export import export_feature_to_docx, Document, add_table_of_contents
 import io
 from datetime import datetime
+from flask_wtf.csrf import CSRFProtect
+from flask import g
+from flask_wtf.csrf import generate_csrf
+
+
+
 
 app = Flask(__name__)
 app.secret_key = 'your-very-secret-key-here'
@@ -48,6 +54,9 @@ def is_descendant(feature, potential_parent):
         current = current.parent
     return False
 
+@app.context_processor
+def inject_csrf_token():
+    return dict(csrf_token=generate_csrf)
 
 @app.route('/')
 def index():
