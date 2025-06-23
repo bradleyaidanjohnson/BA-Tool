@@ -209,7 +209,11 @@ def new_feature(project_id, parent_id=None):
                 db.session.add(featureAttachment)
 
         db.session.commit()
-        return redirect(url_for('view_project', project_id=project_id))
+        if feature.parent_feature_id:
+            return redirect(url_for('view_feature', feature_id=feature.parent_feature_id))
+        else:
+            return redirect(url_for('view_project', project_id=project_id))
+
 
     return render_template('feature_form.html', project_id=project_id, parent_id=parent_id)
 
@@ -235,7 +239,11 @@ def edit_feature(feature_id):
                 db.session.add(featureAttachment)
 
         db.session.commit()
-        return redirect(url_for('view_feature', feature_id=feature.id))
+        if feature.parent_feature_id:
+            return redirect(url_for('view_feature', feature_id=feature.parent_feature_id))
+        else:
+            return redirect(url_for('view_project', project_id=feature.project_id))
+
 
     return render_template('feature_form.html', feature=feature, project_id=feature.project_id)
 
