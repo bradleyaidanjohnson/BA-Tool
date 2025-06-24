@@ -382,7 +382,8 @@ def new_story(feature_id):
                 db.session.add(note)
 
         db.session.commit()
-        return redirect(url_for('view_project', project_id=feature.project_id))
+        return redirect(url_for("edit_story", story_id=story.id))
+        # return redirect(url_for('view_project', project_id=feature.project_id))
 
     return render_template('story_form.html', feature=feature, personnel=personnel)
 
