@@ -8,8 +8,7 @@ from datetime import datetime
 from flask_wtf.csrf import CSRFProtect
 from flask import g
 from flask_wtf.csrf import generate_csrf
-
-
+import uuid
 
 
 app = Flask(__name__)
@@ -209,11 +208,14 @@ def new_feature(project_id, parent_id=None):
         upload_folder = app.config['UPLOAD_FOLDER']
         for file in files:
             if file and allowed_file(file.filename):
-                filename = secure_filename(file.filename)
-                file_path = os.path.join(upload_folder, filename)
+                original_filename = secure_filename(file.filename)
+                ext = os.path.splitext(original_filename)[1]  # includes the dot
+                unique_filename = f"{uuid.uuid4().hex}{ext}"
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
                 file.save(file_path)
 
-                featureAttachment = FeatureAttachment(filename=filename, feature_id=feature.id)
+
+                featureAttachment = FeatureAttachment(filename=unique_filename, feature_id=feature.id)
 
                 db.session.add(featureAttachment)
 
@@ -240,11 +242,14 @@ def edit_feature(feature_id):
         upload_folder = app.config['UPLOAD_FOLDER']
         for file in files:
             if file and allowed_file(file.filename):
-                filename = secure_filename(file.filename)
-                file_path = os.path.join(upload_folder, filename)
+                original_filename = secure_filename(file.filename)
+                ext = os.path.splitext(original_filename)[1]  # includes the dot
+                unique_filename = f"{uuid.uuid4().hex}{ext}"
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
                 file.save(file_path)
 
-                featureAttachment = FeatureAttachment(filename=filename, feature_id=feature.id)
+
+                featureAttachment = FeatureAttachment(filename=unique_filename, feature_id=feature.id)
                 db.session.add(featureAttachment)
 
         db.session.commit()
@@ -362,10 +367,13 @@ def new_story(feature_id):
         files = request.files.getlist('attachments')
         for file in files:
             if file and allowed_file(file.filename):
-                filename = secure_filename(file.filename)
-                file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                original_filename = secure_filename(file.filename)
+                ext = os.path.splitext(original_filename)[1]  # includes the dot
+                unique_filename = f"{uuid.uuid4().hex}{ext}"
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
                 file.save(file_path)
-                attachment = Attachment(filename=filename, story=story)
+
+                attachment = Attachment(filename=unique_filename, story=story)
                 db.session.add(attachment)
 
         # Optional: handle notes on creation (can skip this if you prefer to only add on edit)
@@ -410,10 +418,13 @@ def edit_story(story_id):
         files = request.files.getlist('attachments')
         for file in files:
             if file and allowed_file(file.filename):
-                filename = secure_filename(file.filename)
-                file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                original_filename = secure_filename(file.filename)
+                ext = os.path.splitext(original_filename)[1]  # includes the dot
+                unique_filename = f"{uuid.uuid4().hex}{ext}"
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
                 file.save(file_path)
-                attachment = Attachment(filename=filename, story=story)
+
+                attachment = Attachment(filename=unique_filename, story=story)
                 db.session.add(attachment)
         # Update story details (e.g., story.details = request.form["details"])
         # Add new notes
@@ -631,9 +642,13 @@ def upload_story_attachments(story_id):
     story = UserStory.query.get_or_404(story_id)
     files = request.files.getlist('attachments')
     for file in files:
-        filename = secure_filename(file.filename)
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        attachment = Attachment(filename=filename, story=story)
+        original_filename = secure_filename(file.filename)
+        ext = os.path.splitext(original_filename)[1]  # includes the dot
+        unique_filename = f"{uuid.uuid4().hex}{ext}"
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+        file.save(file_path)
+
+        attachment = Attachment(filename=unique_filename, story=story)
         db.session.add(attachment)
     db.session.commit()
 
